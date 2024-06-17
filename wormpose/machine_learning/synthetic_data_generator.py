@@ -17,7 +17,6 @@ from wormpose.pose.centerline import flip_theta
 
 class _TemplatesChunkData(object):
     def __init__(self, num_total_templates):
-
         self.frames = None
         self.measurements = None
         self.skeletons = None
@@ -31,13 +30,9 @@ class _TemplatesChunkData(object):
         return np.empty((self._num_total,) + arr.shape[1:], dtype=arr.dtype)
 
     def add_data(self, features, frames, template_indexes, video_name: str):
-
-        # sort indexes for faster frames reading
         template_indexes = np.sort(template_indexes)
 
         if self._cur_index == 0:
-            # init all chunk arrays
-            # frames images may not have all the same size, so preallocate a simple python list instead
             self.frames = [None] * self._num_total
             self.skeletons = self._init_chunk_arr(features.skeletons)
             self.measurements = self._init_chunk_arr(features.measurements)
@@ -88,18 +83,13 @@ def _write_to_file(
 
     synthetic_dataset = SyntheticDataset(**synthetic_dataset_args)
 
-    # preallocate all the template indexes to create the synthetic images (random)
     template_indexes = np.random.randint(len(templates.frames), size=num_samples)
-
-    # preallocate all the choices for the position of the head (random)
     headtail_choice = np.random.choice([0, 1], size=num_samples)
 
-    # preallocate image buffer to draw the synthetic image on
     image_data = np.empty(synthetic_dataset.output_image_shape, dtype=np.uint8)
 
     postures_gen = postures_generation_fn()
     with writer(out_filename) as synth_data_writer:
-
         for index, (cur_template_index, cur_headtail_choice) in enumerate(zip(template_indexes, headtail_choice)):
             theta = next(postures_gen)
             label_data = [theta, flip_theta(theta)]
@@ -137,18 +127,6 @@ class SyntheticDataGenerator(object):
         writer: Type[GenericFileWriter],
         random_seed: Optional[int],
     ):
-        """
-
-        :param num_process: How many processes to distribute the work: there will be one file written per process
-        :param temp_dir: Where to store temporary files
-        :param dataset: A WormPose dataset
-        :param postures_generation_fn: A function generating worm postures (angles)
-        :param enable_random_augmentations: If true, the synthetic images will have random augmentations:
-            translation, scale, blur
-        :param writer: object responsible of writing the data to files
-        :param random_seed: Seed for reproducibility
-        """
-
         self.num_process = num_process
         self.temp_dir = temp_dir
         self.dataset = dataset
@@ -173,7 +151,6 @@ class SyntheticDataGenerator(object):
         Split a subset of template frames and associated features from different videos randomly to several processes
         """
         for process_index in range(self.num_process):
-
             num_samples = num_samples_per_process[process_index]
             if num_samples == 0:
                 continue
@@ -192,13 +169,11 @@ class SyntheticDataGenerator(object):
                 self._all_template_indexes,
                 actual_num_templates_per_video,
             ):
-                # Select randomly some template indexes for each video
                 template_indexes = np.random.choice(
                     cur_video_template_indexes,
                     size=cur_video_num_templates,
                     replace=False,
                 )
-                # Fill in the templates data chunk for this video
                 with self.dataset.frames_dataset.open(video_name) as frames:
                     templates_chunk_data.add_data(
                         features=self.dataset.features_dataset[video_name],
@@ -259,3 +234,16 @@ class SyntheticDataGenerator(object):
 
         for proc in workers:
             proc.join()
+
+# Example usage:
+if __name__ == "__main__":
+    # Example of using SyntheticDataGenerator
+    dataset = Dataset(...)  # Replace with actual Dataset initialization
+    temp_dir = "./temp_dir"
+    num_process = 4
+    postures_generation_fn = lambda: iter(np.random.uniform(low=-np.pi, high=np.pi, size=10))
+    enable_random_augmentations = True
+    writer = GenericFileWriter  # Replace with actual GenericFileWriter initialization
+    random_seed = 42
+    file_pattern = "synthetic_data_{index}.pkl"
+    num_samples = 100
