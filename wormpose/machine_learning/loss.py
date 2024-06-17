@@ -3,7 +3,7 @@ Definition of the loss function for the network
 """
 
 import tensorflow as tf
-
+import numpy as np
 
 def angle_diff(a, b):
     """
@@ -25,3 +25,15 @@ def symmetric_angle_difference(y_true, y_pred):
     mins = tf.reduce_min(dists, axis=0)
     loss = tf.reduce_mean(mins)
     return loss
+
+# Example usage:
+if __name__ == "__main__":
+    # Example of computing the loss
+    y_true = np.array([[0.5, 0.6], [1.0, 1.1], [2.0, 2.1]])  # Example true labels
+    y_pred = np.array([0.45, 0.55, 2.2])  # Example predicted values
+
+    y_true_tf = tf.convert_to_tensor(y_true, dtype=tf.float32)
+    y_pred_tf = tf.convert_to_tensor(y_pred, dtype=tf.float32)
+
+    loss_value = symmetric_angle_difference(y_true_tf, y_pred_tf)
+    print("Loss:", loss_value.numpy())
