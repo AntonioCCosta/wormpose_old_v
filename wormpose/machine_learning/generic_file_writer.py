@@ -2,6 +2,10 @@
 Wrapper to save the training data to different file formats
 """
 
+import h5py
+import csv
+import numpy as np
+import tensorflow as tf
 
 class GenericFileWriter(object):
     """
@@ -22,3 +26,28 @@ class GenericFileWriter(object):
 
     def write(self, data):
         self.write_file(self.f, data)
+
+# Example usage:
+if __name__ == "__main__":
+    # Example of using GenericFileWriter with different file formats
+    # For example, writing to a CSV file
+    def open_csv_file():
+        return open('data.csv', 'w', newline='')
+
+    def write_to_csv(file, data):
+        csv_writer = csv.writer(file)
+        csv_writer.writerow(data)
+
+    with GenericFileWriter(open_file=open_csv_file, write_file=write_to_csv) as writer:
+        writer.write([1, 2, 3, 4, 5])
+
+    # Example of using GenericFileWriter with HDF5 file
+    def open_hdf5_file():
+        return h5py.File('data.h5', 'w')
+
+    def write_to_hdf5(file, data):
+        dataset = file.create_dataset('data', data=np.array(data))
+
+    with GenericFileWriter(open_file=open_hdf5_file, write_file=write_to_hdf5) as writer:
+        writer.write([1, 2, 3, 4, 5])
+
