@@ -1,16 +1,15 @@
 """
-This module contains data structures representing tracking results
-They all contain theta, scores and skeletons but we use several subclasses to specify
-the current step of the tracking pipeline
+This module contains data structures representing tracking results.
+They all contain theta, scores, and skeletons but we use several subclasses to specify
+the current step of the tracking pipeline.
 """
+
 from typing import Optional
-
 import numpy as np
-
 from wormpose.pose.centerline import flip_theta_series
 
 
-class BaseResults(object):
+class BaseResults:
     def __init__(
         self,
         theta: Optional[np.ndarray] = None,
@@ -21,8 +20,8 @@ class BaseResults(object):
         self.scores = scores
         self.skeletons = skeletons
 
-    def __len__(self):
-        return len(self.theta)
+    def __len__(self) -> int:
+        return len(self.theta) if self.theta is not None else 0
 
 
 class OriginalResults(BaseResults):
