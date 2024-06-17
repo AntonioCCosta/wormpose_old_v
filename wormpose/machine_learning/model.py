@@ -4,7 +4,6 @@ Definition of the network model, a ResNet with three blocks
 
 import tensorflow as tf
 
-
 def build_model(input_shape, out_dim, activation=tf.keras.layers.LeakyReLU):
     filters = 32
 
@@ -61,7 +60,7 @@ def _basic_block(x, filters, strides, name, activation):
     shortcut = tf.keras.layers.Conv2D(
         filters=filters,
         kernel_size=1,
-        padding="valid",
+        padding="same",
         strides=strides,
         name=name + "_conv_0",
     )(x)
@@ -92,3 +91,12 @@ def _res_block(x, filters, num_blocks, strides, name, activation):
             activation=activation,
         )
     return x
+
+# Example usage:
+if __name__ == "__main__":
+    # Example of building and summarizing the model
+    input_shape = (64, 64)
+    out_dim = 10
+
+    model = build_model(input_shape, out_dim)
+    model.summary()
