@@ -8,6 +8,7 @@ import logging
 import os
 
 import tensorflow as tf
+import numpy as np
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -28,7 +29,6 @@ class _BestModelsHeap(object):
             heapq.heappush(self._queue, (-val, name))
 
     def append(self, value, name):
-
         if len(self._queue) < self.maxlen:
             heapq.heappush(self._queue, (-value, name))
         else:
@@ -73,7 +73,6 @@ class BestModels(tf.keras.callbacks.Callback):
         """
         At the end of each epoch, update the best models and save to json
         """
-
         val_loss = logs["val_loss"]
 
         last_model_path = os.path.basename(self.models_name_pattern.format(epoch=epoch + 1, val_loss=val_loss))
@@ -96,3 +95,9 @@ class BestModels(tf.keras.callbacks.Callback):
                 f,
                 indent=4,
             )
+
+# Example usage:
+if __name__ == "__main__":
+    models_dir = "./models"
+    callback = BestModels(models_dir=models_dir)
+    # Example of using this callback with a Keras model.fit(...)
