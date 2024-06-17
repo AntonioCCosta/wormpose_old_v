@@ -1,6 +1,6 @@
 """
 This module contains function related to the worm centerline, for example to convert skeleton (x, y) coordinates
-to angles, flip the head-tail orientation etc
+to angles, flip the head-tail orientation, etc.
 """
 from typing import Tuple, Optional
 
@@ -30,15 +30,15 @@ def calculate_skeleton(
 
     centerline_section_length = worm_length / (num_centerline_joints - 1)
     np.cumsum(
-        [
+        np.vstack((
             centerline_section_length * np.cos(theta),
             centerline_section_length * np.sin(theta),
-        ],
-        axis=1,
-        out=out.T,
+        )).T,
+        axis=0,
+        out=out,
     )
     # center the skeleton coordinates in the middle of an image canvas (or center around zero by default)
-    out += -np.min(out, axis=0) + (canvas_width_height - (np.max(out, axis=0) - np.min(out, axis=0))) / 2
+    out += -np.min(out, axis=0) + (np.array(canvas_width_height) - (np.max(out, axis=0) - np.min(out, axis=0))) / 2
 
     return out
 
@@ -68,24 +68,24 @@ def skeletons_to_angles(skeletons: np.ndarray, theta_dims: int) -> np.ndarray:
     for frame in range(skeletons.shape[0]):
         skeleton = skeletons[frame]
         new_skeletons.append(interpolate_skeleton(skeleton, theta_dims))
-    new_skeletons = np.array(new_skeletons, skeletons.dtype)
+    new_skeletons = np.array(new_skeletons, dtype=skeletons.dtype)
 
     skel_x = new_skeletons[:, :, 0]
     skel_y = new_skeletons[:, :, 1]
     d_x = np.diff(skel_x, axis=1)
     d_y = np.diff(skel_y, axis=1)
-    # calculate tangent angles.  atan2 uses angles from -pi to pi
+    # calculate tangent angles. atan2 uses angles from -pi to pi
     angles = np.arctan2(d_y, d_x)
     return angles.astype(np.float32)
 
 
-def skeleton_to_angle(skeleton: np.ndarray, theta_dims: int):
+def skeleton_to_angle(skeleton: np.ndarray, theta_dims: int) -> np.ndarray:
     new_skeleton = interpolate_skeleton(skeleton, theta_dims)
     skel_x = new_skeleton[:, 0]
     skel_y = new_skeleton[:, 1]
     d_x = np.diff(skel_x)
     d_y = np.diff(skel_y)
-    # calculate tangent angles.  atan2 uses angles from -pi to pi
+    # calculate tangent angles. atan2 uses angles from -pi to pi
     angles = np.arctan2(d_y, d_x)
     return angles.astype(np.float32)
 
@@ -100,7 +100,7 @@ def get_joint_indexes(nb_skeleton_joints: int) -> Tuple[int, int, int]:
 
 def flip_theta_series(theta_series: np.ndarray) -> np.ndarray:
     """
-    head-tail flip for each value in a serie
+    head-tail flip for each value in a series
     """
     return np.flip(theta_series, axis=1) + np.pi
 
