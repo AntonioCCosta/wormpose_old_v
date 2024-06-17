@@ -7,10 +7,10 @@ import logging
 import os
 
 import numpy as np
-
+import tensorflow as tf
 from wormpose.dataset import Dataset
 from wormpose.images.real_dataset import RealDataset
-from wormpose.machine_learning import tfrecord_file
+from wormpose.machine_learning.tfrecord_file import Writer as TfrecordWriter
 from wormpose.pose.centerline import skeleton_to_angle, flip_theta
 
 logging.basicConfig()
@@ -63,7 +63,7 @@ def generate(
 
     # write the eval.tfrecord file with the images and the labels, save also the source infos in a separate eval.csv
     # the frames are not shuffled by video, all the frames from one video are consecutive in the file
-    with tfrecord_file.Writer(tfrecord_filename) as record_writer, open(csv_infos_filename, "w") as csv_file:
+    with TfrecordWriter(tfrecord_filename) as record_writer, open(csv_infos_filename, "w", newline='') as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=" ", quotechar="|", quoting=csv.QUOTE_MINIMAL)
         for video_name, cur_video_eval_indexes in eval_frames.items():
 
