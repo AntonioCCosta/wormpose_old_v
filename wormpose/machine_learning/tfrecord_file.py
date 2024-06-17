@@ -1,6 +1,6 @@
 """
 Functions to read and write TFrecord files containing wormpose labeled data:
- one image paired with centerline angles (two options for head-tail flip)
+one image paired with centerline angles (two options for head-tail flip)
 """
 
 from functools import partial
@@ -76,9 +76,9 @@ class Writer(object):
 
     def write(self, image_data, label_0, label_1):
         feature = {
-            "data": tf.train.Feature(bytes_list=tf.train.BytesList(value=[image_data.tostring()])),
-            "label0": tf.train.Feature(float_list=tf.train.FloatList(value=label_0.tolist())),
-            "label1": tf.train.Feature(float_list=tf.train.FloatList(value=label_1.tolist())),
+            "data": tf.train.Feature(bytes_list=tf.train.BytesList(value=[image_data.numpy().tostring()])),
+            "label0": tf.train.Feature(float_list=tf.train.FloatList(value=label_0.numpy().tolist())),
+            "label1": tf.train.Feature(float_list=tf.train.FloatList(value=label_1.numpy().tolist())),
         }
         example_proto = tf.train.Example(features=tf.train.Features(feature=feature))
         self.record_writer.write(example_proto.SerializeToString())
@@ -88,7 +88,7 @@ def parse_square_image(example, theta_dims: int):
     parsed_features = parse_example(example, theta_dims)
     img = tf.io.decode_raw(parsed_features["data"], tf.uint8)
     img_size = tf.math.sqrt(tf.cast(tf.shape(img)[0], tf.float32))
-    img = tf.reshape(img, (img_size, img_size))
+    img = tf.reshape(img, (tf.cast(img_size, tf.int32), tf.cast(img_size, tf.int32)))
     return img, [parsed_features["label0"], parsed_features["label1"]]
 
 
@@ -113,3 +113,16 @@ class TfrecordLabeledDataWriter(GenericFileWriter):
         write_file = lambda f, data: write_training_data_to_tfrecord(f, **data)
 
         super().__init__(open_file=open_file, write_file=write_file)
+
+# Example usage:
+if __name__ == "__main__":
+    # Example of using TfrecordLabeledDataWriter
+    filenames = ["file1.tfrecord", "file2.tfrecord"]  # Replace with actual TFRecord filenames
+    image_shape = (256, 256)
+    batch_size = 32
+    theta_dims = 2
+    is_train = True
+    dataset = get_tfrecord_dataset(filenames, image_shape, batch_size, theta_dims, is_train)
+    for batch in dataset.take(1):  # Example: Take the first batch
+        images, labels = batch
+        print(f"Batch images shape: {images.shape}, labels shape: {labels[0].shape}, {labels[1].shape}")
