@@ -9,11 +9,9 @@ import pickle
 from multiprocessing import Process, Manager
 
 import numpy as np
-
 from wormpose import BaseFramePreprocessing
 from wormpose.dataset import Dataset
 from wormpose.images.real_dataset import RealDataset
-
 
 class _ImagesBatch(object):
     def __init__(self, batch_size: int, image_shape):
@@ -27,7 +25,6 @@ class _ImagesBatch(object):
         self.data[self.index, :, :, 0] = image
         self.index += 1
 
-
 def _assemble_images_batch(
     frame_preprocessing: BaseFramePreprocessing,
     data_reading_queue,
@@ -36,9 +33,9 @@ def _assemble_images_batch(
     batch_size: int,
     image_shape,
 ):
-
     images_batch = _ImagesBatch(batch_size, image_shape)
     real_dataset = RealDataset(frame_preprocessing, image_shape)
+    
     while True:
         queue_data = data_reading_queue.get()
         if queue_data is None:
@@ -58,13 +55,12 @@ def _assemble_images_batch(
 
         os.remove(data_filename)
 
-        # normalize between  and 1
+        # normalize between 0 and 1
         images_data_batch = images_batch.data / 255.0
 
         image_filename = os.path.join(temp_dir, f"real_topredict_{chunk_index:09d}.npy")
         np.save(image_filename, images_data_batch)
         results_queue.put(image_filename)
-
 
 class PredictDataGenerator(object):
     def __init__(
@@ -82,7 +78,6 @@ class PredictDataGenerator(object):
         self.batch_size = batch_size
 
     def _read_data(self, data_reading_queue, num_frames: int, video_name: str):
-
         with self.dataset.frames_dataset.open(video_name) as frames:
             num_chunks = math.ceil(float(num_frames) / self.batch_size)
             for chunk_index in range(num_chunks):
@@ -100,7 +95,6 @@ class PredictDataGenerator(object):
             data_reading_queue.put(None)
 
     def run(self, video_name: str):
-
         manager = Manager()
         data_reading_queue = manager.Queue()
         results_queue = manager.Queue()
@@ -140,3 +134,17 @@ class PredictDataGenerator(object):
             batch_data = np.load(f)
             yield batch_data
             os.remove(f)
+
+# Example usage:
+if __name__ == "__main__":
+    # Example of using PredictDataGenerator
+    dataset = Dataset(...)  # Replace with actual Dataset initialization
+    temp_dir = "./temp_dir"
+    image_shape = (128, 128)
+    batch_size = 32
+    num_process = 4
+    video_name = "example_video"
+
+    data_generator = PredictDataGenerator(dataset, num_process, temp_dir, image_shape, batch_size)
+    for batch_data in data_generator.run(video_name):
+        print("Batch shape:", batch_data.shape)
