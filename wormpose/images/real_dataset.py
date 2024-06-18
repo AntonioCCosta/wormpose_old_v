@@ -12,7 +12,7 @@ from wormpose.dataset.image_processing import frame_preprocessor
 
 class RealDataset(object):
     """
-    The RealDataset takes a raw image and apply the FramePreprocessing, it also ensures all the resulting images
+    The RealDataset takes a raw image and applies the FramePreprocessing, it also ensures all the resulting images
     have the same size, by expanding the region if necessary, or by simply cropping
     """
 
@@ -29,7 +29,8 @@ class RealDataset(object):
 
         if output_image_shape[0] % 2 == 1 or output_image_shape[1] % 2 == 1:
             raise NotImplementedError(
-                f"Image width and height should be even numbers: {output_image_shape}, " f"odd numbers not supported."
+                f"Image width and height should be even numbers: {output_image_shape}, "
+                f"odd numbers not supported."
             )
 
         self.output_image_shape = np.array((output_image_shape[0], output_image_shape[1]))
@@ -50,14 +51,12 @@ class RealDataset(object):
             (worm_roi[1].start + worm_roi[1].stop) // 2,
         )
 
-        # simple case: just crop the desired shape centered around the region of interest
+        # Simple case: just crop the desired shape centered around the region of interest
         if _can_crop_simply(center, self.output_image_shape, processed_frame):
             roi_coord, skel_offset = _simple_crop(center, self.output_image_shape)
-
-        # if we can't make a simple crop :
-        # the region of interest of the worm is bigger than the result image or too much on the edge
-        # let's copy what fits to a new empty image
         else:
+            # The region of interest of the worm is bigger than the result image or too much on the edge
+            # Let's copy what fits to a new empty image
             empty_frame = np.full(self.output_image_shape, bg_mean_color, dtype=processed_frame.dtype)
             processed_frame, roi_coord, skel_offset = _complex_crop(
                 empty_frame=empty_frame,
@@ -87,7 +86,7 @@ def _simple_crop(center, out_shape: np.ndarray):
 
     roi_coord = np.s_[top_left[0] : bottom_right[0], top_left[1] : bottom_right[1]]
 
-    # skeleton is in XY coordinates (numpy is YX)
+    # Skeleton is in XY coordinates (numpy is YX)
     skel_offset = (top_left[1], top_left[0])
 
     return roi_coord, skel_offset
@@ -121,3 +120,17 @@ def _complex_crop(empty_frame, center, out_shape: np.ndarray, processed_frame, w
     )
 
     return empty_frame, roi_coord, skel_offset
+
+# Example usage:
+if __name__ == "__main__":
+    # Example of using RealDataset
+    from wormpose import DummyFramePreprocessing
+
+    frame_preprocessing = DummyFramePreprocessing()
+    output_image_shape = (256, 256)
+    dataset = RealDataset(frame_preprocessing, output_image_shape)
+
+    # Dummy frame example
+    raw_frame = np.random.randint(0, 256, size=(512, 512), dtype=np.uint8)
+    processed_frame, skel_offset = dataset.process_frame(raw_frame)
+    print(f"Processed frame shape: {processed_frame.shape}, Skeleton offset: {skel_offset}")
