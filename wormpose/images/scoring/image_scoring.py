@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 
 
-def calculate_similarity(source_image: np.ndarray, template_image: np.ndarray):
+def calculate_similarity(source_image: np.ndarray, template_image: np.ndarray) -> Tuple[float, Tuple[int, int]]:
     """
     Calculate how similar a template image is to a source image
 
@@ -16,13 +16,13 @@ def calculate_similarity(source_image: np.ndarray, template_image: np.ndarray):
     :return: similarity score and position of the best match
     """
 
-    # calculate cross correlation between a source and a template image
+    # Calculate cross correlation between a source and a template image
     score_map = cv2.matchTemplate(source_image, template_image, method=cv2.TM_CCOEFF_NORMED)
 
-    # find the maximum value (and its location) of the cross correlation map
+    # Find the maximum value (and its location) of the cross correlation map
     _, score, _, score_loc = cv2.minMaxLoc(score_map)
 
-    # we take the absolute value of the cross correlation as our image similarity
+    # We take the absolute value of the cross correlation as our image similarity
     similarity = abs(score)
 
     return similarity, score_loc
@@ -44,8 +44,8 @@ def fit_bounding_box_to_worm(worm_image: np.ndarray, background_color: int, padd
         min_indexes = np.clip(np.min(where_mask, axis=1) - padding, a_min=0, a_max=worm_image.shape)
         max_indexes = np.clip(np.max(where_mask, axis=1) + 1 + padding, a_min=0, a_max=worm_image.shape)
 
-        worm_bounding_box = np.s_[min_indexes[0] : max_indexes[0], min_indexes[1] : max_indexes[1]]
+        worm_bounding_box = np.s_[min_indexes[0]:max_indexes[0], min_indexes[1]:max_indexes[1]]
     else:
-        worm_bounding_box = np.s_[0 : worm_image.shape[0], 0 : worm_image.shape[1]]
+        worm_bounding_box = np.s_[0:worm_image.shape[0], 0:worm_image.shape[1]]
 
     return worm_bounding_box
