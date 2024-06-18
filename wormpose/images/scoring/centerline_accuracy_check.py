@@ -77,3 +77,4 @@ class CenterlineAccuracyCheck(object):
         synth_skel += np.array([skel_offset[0], skel_offset[1]])
 
         return score, synth_skel
+ 
