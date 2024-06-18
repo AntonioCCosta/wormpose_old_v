@@ -12,18 +12,18 @@ from wormpose.pose.centerline import get_joint_indexes
 def make_draw_worm_body(body_color: int = 255) -> Callable:
     """
     Functor to draw a filled worm body on an image
-    as a serie of quadrilaterals with some circles at the extremities
+    as a series of quadrilaterals with some circles at the extremities
 
     :param body_color: which color the worm body will be drawn (default 255)
     :return: function to call to draw a worm on an image
     """
 
-    #  preallocates some internal data structures
-    polygon = [[]] * 4
-    orthogonal = np.empty((2,), dtype=np.float)
+    # Preallocates some internal data structures
+    polygon = [np.empty((2,), dtype=np.float32) for _ in range(4)]
+    orthogonal = np.empty((2,), dtype=np.float32)
     vertices_todraw = np.empty((4, 2), dtype=int)
-    cur_joint = np.empty(2, dtype=np.float)
-    prev_joint = np.empty(2, dtype=np.float)
+    cur_joint = np.empty(2, dtype=np.float32)
+    prev_joint = np.empty(2, dtype=np.float32)
 
     def _draw_extremity(img, center, radius):
         cv2.circle(img, (int(center[0]), int(center[1])), int(radius), body_color, -1, 8)
@@ -32,7 +32,7 @@ def make_draw_worm_body(body_color: int = 255) -> Callable:
 
         num_centerline_joints = len(worm_thickness)
 
-        # draw two circles at the extremities
+        # Draw two circles at the extremities
         _draw_extremity(img, skeleton[0], worm_thickness[0])
         _draw_extremity(
             img,
@@ -42,7 +42,7 @@ def make_draw_worm_body(body_color: int = 255) -> Callable:
 
         rx, ry = skeleton[:, 0], skeleton[:, 1]
 
-        # draw convex quadrilateral polygons in the middle
+        # Draw convex quadrilateral polygons in the middle
         prev_boundary_0 = None
         prev_boundary_1 = None
 
@@ -59,17 +59,17 @@ def make_draw_worm_body(body_color: int = 255) -> Callable:
             orthogonal[0] /= length
             orthogonal[1] /= length
 
-            polygon[0] = cur_joint + orthogonal * worm_thickness[i]
-            polygon[1] = cur_joint - orthogonal * worm_thickness[i]
+            polygon[0][:] = cur_joint + orthogonal * worm_thickness[i]
+            polygon[1][:] = cur_joint - orthogonal * worm_thickness[i]
             if prev_boundary_0 is None and prev_boundary_1 is None:
-                polygon[2] = prev_joint - orthogonal * worm_thickness[i - 1]
-                polygon[3] = prev_joint + orthogonal * worm_thickness[i - 1]
+                polygon[2][:] = prev_joint - orthogonal * worm_thickness[i - 1]
+                polygon[3][:] = prev_joint + orthogonal * worm_thickness[i - 1]
             else:
-                polygon[3] = prev_boundary_0
-                polygon[2] = prev_boundary_1
+                polygon[3][:] = prev_boundary_0
+                polygon[2][:] = prev_boundary_1
 
-            prev_boundary_0 = polygon[0]
-            prev_boundary_1 = polygon[1]
+            prev_boundary_0 = polygon[0].copy()
+            prev_boundary_1 = polygon[1].copy()
 
             vertices_todraw[0] = polygon[0]
             vertices_todraw[1] = polygon[1]
@@ -124,3 +124,17 @@ def draw_measurements(image: np.ndarray, skeleton: np.ndarray, measurements, col
     draw_width_circle(image, skeleton[head_joint], measurements["head_width"], color)
     draw_width_circle(image, skeleton[mid_body_joint], measurements["midbody_width"], color)
     draw_width_circle(image, skeleton[tail_body_joint], measurements["tail_width"], color)
+
+# Example usage:
+if __name__ == "__main__":
+    # Dummy skeleton and thickness for testing
+    skeleton = np.array([[100, 100], [150, 150], [200, 200], [250, 250], [300, 300]], dtype=np.float32)
+    worm_thickness = np.array([5, 10, 15, 10, 5], dtype=np.float32)
+
+    img = np.zeros((400, 400), dtype=np.uint8)
+    draw_worm_body = make_draw_worm_body(body_color=255)
+    draw_worm_body(worm_thickness, img, skeleton)
+
+    cv2.imshow("Worm Body", img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
